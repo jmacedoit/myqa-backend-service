@@ -5,7 +5,6 @@
  */
 
 import { DefaultContext, DefaultState, ParameterizedContext } from 'koa';
-import Router from 'koa-router';
 
 /*
  * Koa context type.

@@ -5,6 +5,7 @@
 
 import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
+import cors from '@koa/cors';
 import koaLogger from 'koa-logger';
 import logger from 'src/logger';
 import passport from 'koa-passport';
@@ -17,6 +18,9 @@ import router from 'src/router';
 export default () => {
   const app = new Koa();
 
+  app.use(cors({
+    credentials: true,
+  }));
   app.use(koaLogger((message) => {
     logger.http(message);
   }));

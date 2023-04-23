@@ -12,6 +12,7 @@ import config from 'config';
 export default {
   serviceName: config.get('serviceName') as string,
   server: {
+    domain: config.get('server.domain') as string,
     port: parseInt(config.get('server.port'), 10),
   },
   logger: {
@@ -25,6 +26,7 @@ export default {
   authentication: {
     signingKey: config.get('authentication.signingKey') as string,
     expirationTime: config.get('authentication.expirationTime') as string,
+    secureCookies: config.get('authentication.secureCookies') === 'true' || config.get('authentication.secureCookies') === true
   },
   intelligenceService: {
     url: config.get('intelligenceService.url') as string,

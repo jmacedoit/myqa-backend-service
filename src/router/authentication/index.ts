@@ -60,7 +60,7 @@ async function authenticationController(ctx: KoaContext, next: Next) {
 
       ctx.cookies.set('jwt', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: config.authentication.secureCookies
       });
 
       ctx.status = 200;
