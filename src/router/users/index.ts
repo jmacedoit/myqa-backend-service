@@ -6,7 +6,11 @@
 import { FromSchema } from 'json-schema-to-ts';
 import { KoaContext } from 'src/types/koa';
 import { Next } from 'koa';
+import { User } from 'src/models/user';
 import { applicationOperations } from 'src/services/application-operations';
+import { jwtAuthenticationMiddleware } from 'src/router/middlewares/authentication';
+import { omit } from 'lodash';
+import { properties } from 'src/utilities/types';
 import { validateRequestSchema } from 'src/router/middlewares/schema';
 import Router from 'koa-router';
 
@@ -59,11 +63,25 @@ async function createUserController(ctx: KoaContext, next: Next) {
   return next();
 }
 
+
+async function getAuthenticatedUserController(ctx: KoaContext, next: Next) {
+  ctx.status = 200;
+  ctx.body = omit(ctx.state.user as User, properties<User>().password) ;
+
+  return next();
+}
+
 /*
  * Add user routes.
  */
 
 export function addUserRoutes(router: Router<any, any>) {
+  router.get(
+    '/authenticated-user',
+    jwtAuthenticationMiddleware,
+    getAuthenticatedUserController
+  );
+
   router.post(
     '/users',
     validateRequestSchema({ body: createUserSchema }),
