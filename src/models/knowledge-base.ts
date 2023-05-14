@@ -3,7 +3,7 @@
  * Module dependencies.
  */
 
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, VirtualColumn } from 'typeorm';
 import { Organization } from './organization';
 import { Resource } from './resource';
 
@@ -20,6 +20,15 @@ export class KnowledgeBase {
 
   @ManyToOne(() => Organization, (organization: Organization) => organization.knowledgeBases, { nullable: false })
   organization!: Organization
+
+  @VirtualColumn({ query: (alias: any) => `SELECT COUNT(*) FROM resource WHERE knowledge_base_id = ${alias}.id` })
+  resourcesCount!: number
+
+  @CreateDateColumn()
+  createdAt!: Date
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
   constructor(knowledgeBaseData?: { id?: string, name: string }) {
     if (!knowledgeBaseData) {

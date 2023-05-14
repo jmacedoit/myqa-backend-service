@@ -245,7 +245,7 @@ export class ApplicationOperations {
       await knowledgeBaseRepository.delete({ id: knowledgeBaseId });
     });
 
-    // await this.knowledgeBaseService.removeKnowledgeBase(knowledgeBaseId);
+    await this.knowledgeBaseService.removeKnowledgeBase(knowledgeBaseId);
   }
 
   async addFileResourceToKnowledgeBase(knowledgeBaseId: string, fileName: string, fileContent: Buffer): Promise<Resource> {

@@ -26,7 +26,8 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: [],
   migrationsTableName: 'migrations',
   logging: false,
-  namingStrategy: new SnakeNamingStrategy()
+  namingStrategy: new SnakeNamingStrategy(),
+  timezone: 'Z'
 };
 
 export const AppDataSource = new DataSource(dataSourceOptions);
