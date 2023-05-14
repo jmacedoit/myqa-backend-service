@@ -3,7 +3,7 @@
  * Module dependencies.
  */
 
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { KnowledgeBase } from './knowledge-base';
 
 export type ResourceType = 'FILE';
@@ -21,6 +21,12 @@ export class Resource {
 
   @ManyToOne(() => KnowledgeBase, (knowledgeBase: KnowledgeBase) => knowledgeBase.resources, { nullable: false })
   knowledgeBase!: KnowledgeBase
+
+  @CreateDateColumn()
+  createdAt!: Date
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
   constructor(resourceData?: { id?: string, type: ResourceType, metadata: object }) {
     if (!resourceData) {

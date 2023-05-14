@@ -3,7 +3,7 @@
  * Module dependencies.
  */
 
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Organization } from './organization';
 
 @Entity()
@@ -26,6 +26,12 @@ export class User {
 
   @Column('boolean')
   acceptedTerms!: boolean
+
+  @CreateDateColumn()
+  createdAt!: Date
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
   constructor(userData?: { id?: string, displayName: string, email: string, hashedPassword: string, acceptedTerms: boolean }) {
     if (!userData) {

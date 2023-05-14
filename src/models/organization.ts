@@ -3,7 +3,7 @@
  * Module dependencies.
  */
 
-import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { KnowledgeBase } from './knowledge-base';
 import { User } from './user';
 
@@ -24,6 +24,12 @@ export class Organization {
   @OneToMany(() => KnowledgeBase, (knowledgeBase: KnowledgeBase) => knowledgeBase.organization)
   @JoinTable()
   knowledgeBases!: KnowledgeBase[]
+
+  @CreateDateColumn()
+  createdAt!: Date
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
   constructor(organizationData?: { id?: string, name: string, isPersonal: boolean }) {
     if (!organizationData) {
