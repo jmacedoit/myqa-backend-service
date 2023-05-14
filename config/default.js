@@ -6,6 +6,7 @@
 module.exports = {
   serviceName: 'myqa-backend',
   server: {
+    domain: null,
     port: 7100
   },
   logger: {
@@ -18,7 +19,8 @@ module.exports = {
   },
   authentication: {
     signingKey: null,
-    expirationTime: '1h'
+    expirationTime: '1h',
+    secureCookies: true
   },
   intelligenceService: {
     url: 'http://localhost:7000'
