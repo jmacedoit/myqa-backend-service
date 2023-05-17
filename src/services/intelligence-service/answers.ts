@@ -17,11 +17,12 @@ export class AnswersIntelligenceService {
     this.baseUrl = baseUrl;
   }
 
-  async addAnswerRequest(knowledgeBaseId: string, question: string) {
+  async addAnswerRequest(knowledgeBaseId: string, question: string, reference: string) {
     const url = `${this.baseUrl}/answer-request`;
     const requestBody = {
       knowledgeBaseId,
       question,
+      reference
     };
 
     const response = await fetch(url, {

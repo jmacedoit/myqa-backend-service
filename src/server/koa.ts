@@ -3,6 +3,7 @@
  * Module dependencies.
  */
 
+import { createServer } from 'http';
 import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import cors from '@koa/cors';
@@ -15,12 +16,13 @@ import router from 'src/router';
  * Export koa application.
  */
 
-export default () => {
+function createKoaApp() {
   const app = new Koa();
 
   app.use(cors({
     credentials: true,
   }));
+
   app.use(koaLogger((message) => {
     logger.http(message);
   }));
@@ -32,4 +34,12 @@ export default () => {
   app.use(router.allowedMethods());
 
   return app;
-};
+}
+
+/*
+ * Export koa server.
+ */
+
+const koaApp = createKoaApp();
+
+export default createServer(koaApp.callback());

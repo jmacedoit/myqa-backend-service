@@ -11,6 +11,7 @@ import { jwtAuthenticationMiddleware } from 'src/router/middlewares/authenticati
 import { validateKnowledgeBaseIsInUserOrganization } from 'src/router/middlewares/validations';
 import { validateRequestSchema } from 'src/router/middlewares/schema';
 import Router from 'koa-router';
+import crypto from 'crypto';
 
 /*
  * Types.
@@ -23,6 +24,9 @@ const createAnswerRequestSchema = {
       'type': 'string'
     },
     'knowledgeBaseId': {
+      'type': 'string'
+    },
+    'questionReference': {
       'type': 'string'
     }
   },
@@ -38,7 +42,15 @@ type CreateAnswerRequestData = FromSchema<typeof createAnswerRequestSchema>
 
 async function createAnswerRequestController(ctx: KoaContext, next: Next) {
   const createAnswerRequestData = ctx.request.body as CreateAnswerRequestData;
-  const answerRequest = await applicationOperations.getAnswer(createAnswerRequestData.question, createAnswerRequestData.knowledgeBaseId);
+  const userId = ctx.state.user.id;
+  const questionReference = createAnswerRequestData.questionReference ?? crypto.randomBytes(8).toString('hex');
+  const reference = `${userId}:${questionReference}`;
+
+  const answerRequest = await applicationOperations.getAnswer(
+    createAnswerRequestData.question,
+    createAnswerRequestData.knowledgeBaseId,
+    reference
+  );
 
   ctx.status = 200;
   ctx.body = answerRequest;
