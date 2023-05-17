@@ -278,8 +278,8 @@ export class ApplicationOperations {
     return resourceRepository.find({ where: { knowledgeBase: { id: knowledgeBaseId } } });
   }
 
-  async getAnswer(question: string, knowledgeBaseId: string) {
-    return await this.answersService.addAnswerRequest(knowledgeBaseId, question);
+  async getAnswer(question: string, knowledgeBaseId: string, reference: string) {
+    return await this.answersService.addAnswerRequest(knowledgeBaseId, question, reference);
   }
 
 }

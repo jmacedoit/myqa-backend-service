@@ -7,16 +7,19 @@ import 'reflect-metadata';
 import { AppDataSource, dataSourceOptions } from './data-source';
 import { addHealthChecks } from './utilities/health-checks';
 import { createDatabase } from 'typeorm-extension';
+import { io as ioClient } from 'socket.io-client';
+import { setupIntelligenceServiceSocketHandlers } from './socker-handlers/intelligence-service';
 import config from './config';
-import koaApp from './koa-app';
+import httpServer from './server/koa';
 import logger from './logger';
+import socketIoServer from './server/socketio';
+
 
 /*
  * Dump node warnings and errors.
  */
 
 process.on('warning', error => logger.warn(error.stack));
-
 
 process.on('unhandledRejection', (reason, promise) => {
   console.log('Unhandled Rejection at:', promise, 'Reason:', reason);
@@ -56,9 +59,15 @@ logger.debug(`Settings: ${JSON.stringify(config, null, 2)}`);
 setTimeout(async () => {
   const port = config.server.port;
 
-  const server = koaApp().listen(port);
+  addHealthChecks(httpServer);
 
-  addHealthChecks(server);
+  socketIoServer.on('connection', () => { return; });
+
+  httpServer.listen(port);
+
+  const intelligenceServiceSocket = ioClient(config.intelligenceService.url);
+
+  setupIntelligenceServiceSocketHandlers(intelligenceServiceSocket);
 
   logger.info(`Koa now listening to port ${port}`);
 }, 1000);

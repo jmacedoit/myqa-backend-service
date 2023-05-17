@@ -9,6 +9,9 @@ module.exports = {
     domain: null,
     port: 7100
   },
+  cors: {
+    socketConnectionOrigin: 'http://localhost:1234'
+  },
   logger: {
     datePattern: 'YYYY-MM-DD',
     format: 'text',

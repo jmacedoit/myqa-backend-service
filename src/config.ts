@@ -15,6 +15,9 @@ export default {
     domain: config.get('server.domain') as string,
     port: parseInt(config.get('server.port'), 10),
   },
+  cors: {
+    socketConnectionOrigin: config.get('cors.socketConnectionOrigin') as string
+  },
   logger: {
     datePattern: config.get('logger.datePattern') as string,
     format: config.get('logger.format') as string,
