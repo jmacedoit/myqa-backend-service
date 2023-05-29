@@ -4,9 +4,18 @@
  */
 
 module.exports = {
+  api: {
+    prefix: '/api'
+  },
+  datasource: {
+    host: 'localhost',
+    port: 3406,
+    username: 'root',
+    password: 'password',
+    database: 'myqa_general'
+  },
   serviceName: 'myqa-backend',
   server: {
-    domain: null,
     port: 7100
   },
   cors: {
