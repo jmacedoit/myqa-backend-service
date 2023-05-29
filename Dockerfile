@@ -1,4 +1,4 @@
-FROM node:16-alpine3.14
+FROM --platform=linux/amd64 node:16-alpine3.16
 
 # Setup working directory
 WORKDIR /usr/src/app
