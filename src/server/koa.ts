@@ -17,7 +17,9 @@ import router from 'src/router';
  */
 
 function createKoaApp() {
-  const app = new Koa();
+  const app = new Koa({
+    proxy: true
+  });
 
   app.use(cors({
     credentials: true,
