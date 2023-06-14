@@ -10,9 +10,18 @@ import config from 'config';
  */
 
 export default {
+  api: {
+    prefix: config.get('api.prefix') as string,
+  },
+  datasource: {
+    host: config.get('datasource.host') as string,
+    port: parseInt(config.get('datasource.port'), 10),
+    username: config.get('datasource.username') as string,
+    password: config.get('datasource.password') as string,
+    database: config.get('datasource.database') as string,
+  },
   serviceName: config.get('serviceName') as string,
   server: {
-    domain: config.get('server.domain') as string,
     port: parseInt(config.get('server.port'), 10),
   },
   cors: {

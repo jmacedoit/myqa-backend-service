@@ -9,12 +9,15 @@ import { addKnowledgeBaseRoutes } from './knowledge-bases';
 import { addOrganizationRoutes } from './organizations';
 import { addUserRoutes } from './users';
 import Router from 'koa-router';
+import config from 'src/config';
 
 /*
  * Configure router and register routes.
  */
 
-const router = new Router();
+const router = new Router({
+  prefix: config.api.prefix
+});
 
 addAuthenticationRoutes(router);
 addOrganizationRoutes(router);
