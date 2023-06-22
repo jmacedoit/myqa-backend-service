@@ -13,6 +13,7 @@ export default {
   api: {
     prefix: config.get('api.prefix') as string,
   },
+  publicUri: config.get('publicUri') as string,
   datasource: {
     host: config.get('datasource.host') as string,
     port: parseInt(config.get('datasource.port'), 10),
@@ -45,5 +46,13 @@ export default {
   },
   resources: {
     maxFileSize: parseInt(config.get('resources.maxFileSize'), 10)
+  },
+  emailVerification: {
+    tokenTtl: parseInt(config.get('emailVerification.tokenTtl'), 10),
+    route: config.get('emailVerification.route') as string,
+  },
+  sendgrid: {
+    apiKey: config.get('sendgrid.apiKey') as string,
+    senderEmail: config.get('sendgrid.senderEmail') as string
   }
 };

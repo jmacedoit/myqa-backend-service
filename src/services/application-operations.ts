@@ -5,16 +5,21 @@
 
 import { AnswersIntelligenceService, answersIntelligenceService } from './intelligence-service/answers';
 import { AppDataSource } from 'src/data-source';
+import { EmailService, emailService } from './email-service';
+import { EmailVerificationToken } from 'src/models/email-verification-token';
 import { In } from 'typeorm';
 import { KnowledgeBase } from 'src/models/knowledge-base';
 import { KnowledgeBaseIntelligenceService, knowledgeBaseIntelligenceService } from './intelligence-service/knowledge-base';
 import { Organization } from 'src/models/organization';
+import { PasswordResetToken } from 'src/models/password-reset-token';
 import { Resource } from 'src/models/resource';
 import { User } from 'src/models/user';
 import { createHash, randomBytes } from 'crypto';
+import { isTokenNotExpired } from 'src/utilities/tokens';
 import { omit } from 'lodash';
 import { properties } from 'src/utilities/types';
 import { v4 as uuidv4 } from 'uuid';
+import config from 'src/config';
 
 /*
  * Types.
@@ -46,25 +51,39 @@ export type OrganizationData = {
 export class ApplicationOperations {
   knowledgeBaseService: KnowledgeBaseIntelligenceService;
   answersService: AnswersIntelligenceService;
+  emailService: EmailService;
 
-  constructor(knowledgeBaseService: KnowledgeBaseIntelligenceService, answersService: AnswersIntelligenceService) {
+  constructor(knowledgeBaseService: KnowledgeBaseIntelligenceService, answersService: AnswersIntelligenceService, emailService: EmailService) {
     this.knowledgeBaseService = knowledgeBaseService;
     this.answersService = answersService;
+    this.emailService = emailService;
   }
 
   async registerUser(userData: UserRegisterData) {
     await AppDataSource.transaction(async (transactionalEntityManager) => {
       const hashedPassword = await this.hashUserPassword(userData.password);
-      const user = new User({ ...userData, hashedPassword });
+      const user = new User({ ...userData, hashedPassword, verifiedEmail: false });
       const organization = new Organization({ name: 'Private', isPersonal: true });
+      const emailVerificationToken = new EmailVerificationToken({ token: uuidv4(), ttl: config.emailVerification.tokenTtl });
 
       user.organizations = [organization];
 
+      emailVerificationToken.user = user;
+
       const userRepository = transactionalEntityManager.getRepository(User);
       const organizationRepository = transactionalEntityManager.getRepository(Organization);
+      const emailVerificationTokenRepository = transactionalEntityManager.getRepository(EmailVerificationToken);
 
       await organizationRepository.save(organization);
       await userRepository.save(user);
+      await emailVerificationTokenRepository.save(emailVerificationToken);
+
+      await this.emailService.sendEmailVerificationEmail({
+        userEmail: user.email,
+        userDisplayName: user.displayName,
+        token: emailVerificationToken.token,
+        language: 'en'
+      });
     });
   }
 
@@ -282,6 +301,108 @@ export class ApplicationOperations {
     return await this.answersService.addAnswerRequest(knowledgeBaseId, question, reference);
   }
 
+  async verifyUserEmail(emailVerificationTokenString: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const emailVerificationTokenRepository = transactionalEntityManager.getRepository(EmailVerificationToken);
+
+      const emailVerificationToken = await emailVerificationTokenRepository.findOneBy({ token: emailVerificationTokenString });
+
+      if (!emailVerificationToken) {
+        throw new InvalidToken('Token not found');
+      }
+
+      const userRepository = transactionalEntityManager.getRepository(User);
+
+      const user = await userRepository.findOneBy({ id: emailVerificationToken.user as unknown as string });
+
+      if (!user) {
+        throw new InvalidToken('Token has no user');
+      }
+
+      if (isTokenNotExpired(emailVerificationToken.createdAt, emailVerificationToken.ttl)) {
+        throw new ExpiredToken('Token is expired');
+      }
+
+      user.verifiedEmail = true;
+
+      await userRepository.save(user);
+      await emailVerificationTokenRepository.delete({ id: emailVerificationToken.id });
+    });
+  }
+
+  async createPasswordRecoveryRequest(email: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const userRepository = transactionalEntityManager.getRepository(User);
+      const passwordResetTokenRepository = transactionalEntityManager.getRepository(PasswordResetToken);
+
+      const user = await userRepository.findOneBy({ email });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const passwordResetToken = new PasswordResetToken({ token: uuidv4(), ttl: config.emailVerification.tokenTtl });
+
+      passwordResetToken.user = user;
+
+      await passwordResetTokenRepository.save(passwordResetToken);
+
+      await this.emailService.sendPasswordResetEmail({
+        userEmail: user.email,
+        userDisplayName: user.displayName,
+        token: passwordResetToken.token,
+        language: 'en'
+      });
+    });
+  }
+
+  async resetPassword(passwordResetTokenString: string, password: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const passwordResetTokenRepository = transactionalEntityManager.getRepository(PasswordResetToken);
+
+      const passwordResetToken = await passwordResetTokenRepository.findOneBy({ token: passwordResetTokenString });
+
+      if (!passwordResetToken) {
+        throw new InvalidToken('Token not found');
+      }
+
+      const userRepository = transactionalEntityManager.getRepository(User);
+
+      const user = await userRepository.findOneBy({ id: passwordResetToken.user as unknown as string });
+
+      if (!user) {
+        throw new InvalidToken('Token has no user');
+      }
+
+      if (isTokenNotExpired(passwordResetToken.createdAt, passwordResetToken.ttl)) {
+        throw new ExpiredToken('Token is expired');
+      }
+
+      user.password = await this.hashUserPassword(password);
+
+      await userRepository.save(user);
+      await passwordResetTokenRepository.delete({ id: passwordResetToken.id });
+
+      await this.emailService.sendPasswordResetConfirmationEmail({
+        userEmail: user.email,
+        userDisplayName: user.displayName,
+        language: 'en'
+      });
+    });
+  }
 }
 
-export const applicationOperations = new ApplicationOperations(knowledgeBaseIntelligenceService, answersIntelligenceService);
+export class InvalidToken extends Error {
+  constructor(message: string | undefined) {
+    super(message);
+  }
+}
+
+export class ExpiredToken extends Error {
+  constructor(message: string | undefined) {
+    super(message);
+  }
+}
+
+
+export const applicationOperations = new ApplicationOperations(knowledgeBaseIntelligenceService, answersIntelligenceService, emailService);

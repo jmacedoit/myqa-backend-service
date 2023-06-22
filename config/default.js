@@ -7,6 +7,7 @@ module.exports = {
   api: {
     prefix: '/api'
   },
+  publicUri: 'http://localhost:1234',
   datasource: {
     host: 'localhost',
     port: 3406,
@@ -39,5 +40,17 @@ module.exports = {
   },
   resources: {
     maxFileSize: 1024 * 1024 * 10 // 10MB
+  },
+  emailVerification: {
+    tokenTtl: 60 * 60 * 24 * 2,
+    route: '/app/email-verification'
+  },
+  passwordReset: {
+    tokenTtl: 60 * 60 * 24 * 2,
+    route: '/app/password-reset'
+  },
+  sendgrid: {
+    apiKey: null,
+    senderEmail: 'hello@myqa.app'
   }
 }

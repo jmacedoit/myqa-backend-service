@@ -7,6 +7,7 @@ module.exports = {
   api: {
     prefix: 'API_PREFIX'
   },
+  publicUri: 'PUBLIC_URI',
   authentication: {
     signingKey: 'AUTH_SIGNING_KEY',
     expirationTime: 'AUTH_EXPIRATION_TIME',
@@ -39,5 +40,13 @@ module.exports = {
   },
   resources: {
     maxFileSize: 'RESOURCES_MAXFILESIZE'
+  },
+  emailVerification: {
+    tokenTtl: 'EMAIL_VERIFICATION_TTL',
+    route: 'EMAIL_VERIFICATION_ROUTE'
+  },
+  sendgrid: {
+    apiKey: 'SENDGRID_API_KEY',
+    senderEmail: 'SENDGRID_SENDER_EMAIL'
   }
 };

@@ -5,6 +5,7 @@
 
 import { addAnswersRoutes } from './answers';
 import { addAuthenticationRoutes } from './authentication';
+import { addEmailVerificationRoutes } from './email-verification';
 import { addKnowledgeBaseRoutes } from './knowledge-bases';
 import { addOrganizationRoutes } from './organizations';
 import { addUserRoutes } from './users';
@@ -24,6 +25,7 @@ addOrganizationRoutes(router);
 addKnowledgeBaseRoutes(router);
 addUserRoutes(router);
 addAnswersRoutes(router);
+addEmailVerificationRoutes(router);
 
 /*
  * Export router.
