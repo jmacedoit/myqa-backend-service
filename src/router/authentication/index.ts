@@ -41,7 +41,6 @@ emailPasswordPassport.use(
   })
 );
 
-
 /*
  * Login controller.
  */

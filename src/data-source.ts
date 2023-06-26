@@ -4,8 +4,10 @@
  */
 
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { EmailVerificationToken } from './models/email-verification-token';
 import { KnowledgeBase } from './models/knowledge-base';
 import { Organization } from './models/organization';
+import { PasswordResetToken } from './models/password-reset-token';
 import { Resource } from 'src/models/resource';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { User } from './models/user';
@@ -22,7 +24,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: config.datasource.username,
   password: config.datasource.password,
   database: config.datasource.database,
-  entities: [Resource, Organization, User, KnowledgeBase],
+  entities: [EmailVerificationToken, PasswordResetToken, Resource, Organization, User, KnowledgeBase],
   synchronize: true,
   migrations: [],
   migrationsTableName: 'migrations',
