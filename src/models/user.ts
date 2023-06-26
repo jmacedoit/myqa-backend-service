@@ -27,13 +27,16 @@ export class User {
   @Column('boolean')
   acceptedTerms!: boolean
 
+  @Column('boolean')
+  verifiedEmail!: boolean
+
   @CreateDateColumn()
   createdAt!: Date
 
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  constructor(userData?: { id?: string, displayName: string, email: string, hashedPassword: string, acceptedTerms: boolean }) {
+  constructor(userData?: { id?: string, displayName: string, email: string, hashedPassword: string, acceptedTerms: boolean, verifiedEmail: boolean }) {
     if (!userData) {
       return;
     }
@@ -46,5 +49,6 @@ export class User {
     this.email = userData.email;
     this.password = userData.hashedPassword;
     this.acceptedTerms = userData.acceptedTerms;
+    this.verifiedEmail = userData.verifiedEmail;
   }
 }

@@ -11,8 +11,10 @@ import { applicationOperations } from 'src/services/application-operations';
 import { jwtAuthenticationMiddleware } from 'src/router/middlewares/authentication';
 import { omit } from 'lodash';
 import { properties } from 'src/utilities/types';
+import { validate as validateEmail } from 'deep-email-validator';
 import { validateRequestSchema } from 'src/router/middlewares/schema';
 import Router from 'koa-router';
+
 
 /*
  * Types.
@@ -46,6 +48,10 @@ type CreateUserData = FromSchema<typeof createUserSchema>;
 
 async function createUserController(ctx: KoaContext, next: Next) {
   const { email, password, acceptedTerms, displayName } = ctx.request.body as CreateUserData;
+
+  if (!(await validateEmail(email)).valid) {
+    ctx.throw(400, 'Invalid email');
+  }
 
   if (!acceptedTerms) {
     ctx.throw(400, 'Terms must be accepted');
