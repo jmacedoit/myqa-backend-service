@@ -32,7 +32,7 @@ module.exports = {
   },
   authentication: {
     signingKey: null,
-    expirationTime: '1h',
+    expirationTime: '168h',
     secureCookies: true
   },
   intelligenceService: {
