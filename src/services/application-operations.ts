@@ -5,6 +5,8 @@
 
 import { AnswersIntelligenceService, answersIntelligenceService } from './intelligence-service/answers';
 import { AppDataSource } from 'src/data-source';
+import { ChatMessage } from 'src/models/chat-message';
+import { ChatSession } from 'src/models/chat-session';
 import { EmailService, emailService } from './email-service';
 import { EmailVerificationToken } from 'src/models/email-verification-token';
 import { In } from 'typeorm';
@@ -16,7 +18,7 @@ import { Resource } from 'src/models/resource';
 import { User } from 'src/models/user';
 import { createHash, randomBytes } from 'crypto';
 import { isTokenNotExpired as isTokenUnexpired } from 'src/utilities/tokens';
-import { omit } from 'lodash';
+import { omit, sortBy } from 'lodash';
 import { properties } from 'src/utilities/types';
 import { v4 as uuidv4 } from 'uuid';
 import config from 'src/config';
@@ -58,6 +60,8 @@ export class ApplicationOperations {
     this.answersService = answersService;
     this.emailService = emailService;
   }
+
+  // User operations.
 
   async registerUser(userData: UserRegisterData) {
     await AppDataSource.transaction(async (transactionalEntityManager) => {
@@ -118,187 +122,6 @@ export class ApplicationOperations {
     const userRepository = AppDataSource.getRepository(User);
 
     return userRepository.findOneBy({ email });
-  }
-
-  async createOrganizationForUser(organizationData: OrganizationData, userId: string): Promise<Organization> {
-    let organization!: Organization;
-
-    await AppDataSource.transaction(async (transactionalEntityManager) => {
-      const organizationRepository = transactionalEntityManager.getRepository(Organization);
-      const userRepository = transactionalEntityManager.getRepository(User);
-
-      organization = new Organization({
-        id: uuidv4(),
-        ...organizationData
-      });
-
-      const user = await userRepository.findOne({ where: { id: userId }, relations: { organizations: true } });
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      await organizationRepository.save(organization);
-
-      user.organizations.push(organization);
-
-      await userRepository.save(user);
-    });
-
-    return organization;
-  }
-
-  async getOrganizationsByUser(userId: string) {
-    const organizationRepository = AppDataSource.getRepository(Organization);
-
-    return organizationRepository.find({ where: { users: { id: userId } } });
-  }
-
-  async updateOrganization(organizationData: OrganizationData): Promise<Organization> {
-    const organizationRepository = AppDataSource.getRepository(Organization);
-
-    const organization = await organizationRepository.findOneBy({ id: organizationData.id });
-
-    if (!organization) {
-      throw new Error('Organization not found');
-    }
-
-    Object.assign(organization, omit(organizationData, [properties<Organization>().id]));
-
-    await organizationRepository.save(organization);
-
-    return organization;
-  }
-
-  async deleteOrganization(organizationId: string) {
-    await AppDataSource.transaction(async (transactionalEntityManager) => {
-      const organizationRepository = transactionalEntityManager.getRepository(Organization);
-
-      const organization = await organizationRepository.findOneBy({ id: organizationId });
-
-      if (!organization) {
-        throw new Error('Organization not found');
-      }
-
-      if (organization.isPersonal) {
-        throw new Error('Cannot delete personal organization');
-      }
-
-      const userRepository = transactionalEntityManager.getRepository(User);
-      const users = await userRepository.find({ where: { organizations: { id: organization.id } }, relations: { organizations: true } });
-
-      users.forEach((user) => {
-        user.organizations = user.organizations.filter((userOrganization) => userOrganization.id !== organization.id);
-      });
-
-      await userRepository.save(users);
-      await organizationRepository.delete({ id: organization.id });
-    });
-  }
-
-  async createKnowledgeBase(knowledgeBaseData: KnowledgeBaseData, organizationId: string): Promise<KnowledgeBase> {
-    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
-    const knowledgeBase = new KnowledgeBase({
-      id: uuidv4(),
-      ...knowledgeBaseData
-    });
-
-    knowledgeBase.organization = { id: organizationId } as Organization;
-
-    await knowledgeBaseRepository.save(knowledgeBase);
-
-    return omit(knowledgeBase, [properties<KnowledgeBase>().organization]) as KnowledgeBase;
-  }
-
-  async getKnowledgeBasesByUserWithOrganization(userId: string) {
-    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
-    const organizationRepository = AppDataSource.getRepository(Organization);
-
-    const userOrganizations = await organizationRepository.find({ where: { users: { id: userId } } });
-
-    return knowledgeBaseRepository.find({
-      where: {
-        organization: {
-          id: In(userOrganizations.map(organization => organization.id))
-        }
-      },
-      relations: { organization: true }
-    });
-  }
-
-  async getKnowledgeBasesByOrganization(organizationId: string) {
-    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
-
-    return knowledgeBaseRepository.find({ where: { organization: { id: organizationId } } });
-  }
-
-  async getKnowledgeBaseWithOrganization(knowledgeBaseId: string) {
-    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
-    const knowledgeBase = await knowledgeBaseRepository.findOne({ where: { id: knowledgeBaseId }, relations: { organization: true } });
-
-    return knowledgeBase;
-  }
-
-  async updateKnowledgeBase(knowledgeBaseData: Partial<KnowledgeBaseData>): Promise<KnowledgeBase> {
-    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
-
-    const knowledgeBase = await knowledgeBaseRepository.findOneBy({ id: knowledgeBaseData.id });
-
-    if (!knowledgeBase) {
-      throw new Error('Knowledge base not found');
-    }
-
-    Object.assign(knowledgeBase, omit(knowledgeBaseData, [properties<KnowledgeBase>().id]));
-
-    await knowledgeBaseRepository.save(knowledgeBase);
-
-    return knowledgeBase;
-  }
-
-  async deleteKnowledgeBase(knowledgeBaseId: string) {
-    await AppDataSource.transaction(async (transactionalEntityManager) => {
-      const resourceRepository = transactionalEntityManager.getRepository(Resource);
-      const knowledgeBaseRepository = transactionalEntityManager.getRepository(KnowledgeBase);
-
-      await resourceRepository.delete({ knowledgeBase: { id: knowledgeBaseId } as KnowledgeBase });
-      await knowledgeBaseRepository.delete({ id: knowledgeBaseId });
-    });
-
-    await this.knowledgeBaseService.removeKnowledgeBase(knowledgeBaseId);
-  }
-
-  async addFileResourceToKnowledgeBase(knowledgeBaseId: string, fileName: string, fileContent: Buffer): Promise<Resource> {
-    const resourceRepository = AppDataSource.getRepository(Resource);
-    const resource = new Resource({
-      id: uuidv4(),
-      type: 'FILE', metadata: { fileName }
-    });
-
-    resource.knowledgeBase = { id: knowledgeBaseId } as KnowledgeBase;
-
-    await this.knowledgeBaseService.assimilateResource(knowledgeBaseId, resource.id, fileContent, fileName);
-
-    await resourceRepository.save(resource);
-
-    return omit(resource, [properties<Resource>().knowledgeBase]) as Resource;
-  }
-
-  async deleteResourceFromKnowledgeBase(resourceId: string, knowledgeBaseId: string) {
-    const resourceRepository = AppDataSource.getRepository(Resource);
-
-    await this.knowledgeBaseService.removeResource(knowledgeBaseId, resourceId);
-
-    await resourceRepository.delete({ id: resourceId });
-  }
-
-  async getResourcesByKnowledgeBase(knowledgeBaseId: string) {
-    const resourceRepository = AppDataSource.getRepository(Resource);
-
-    return resourceRepository.find({ where: { knowledgeBase: { id: knowledgeBaseId } } });
-  }
-
-  async getAnswer(question: string, knowledgeBaseId: string, reference: string) {
-    return await this.answersService.addAnswerRequest(knowledgeBaseId, question, reference);
   }
 
   async verifyUserEmail(emailVerificationTokenString: string) {
@@ -384,6 +207,278 @@ export class ApplicationOperations {
         userDisplayName: user.displayName,
         language: 'en'
       });
+    });
+  }
+
+  // Organization operations.
+
+  async createOrganizationForUser(organizationData: OrganizationData, userId: string): Promise<Organization> {
+    let organization!: Organization;
+
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const organizationRepository = transactionalEntityManager.getRepository(Organization);
+      const userRepository = transactionalEntityManager.getRepository(User);
+
+      organization = new Organization({
+        id: uuidv4(),
+        ...organizationData
+      });
+
+      const user = await userRepository.findOne({ where: { id: userId }, relations: { organizations: true } });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      await organizationRepository.save(organization);
+
+      user.organizations.push(organization);
+
+      await userRepository.save(user);
+    });
+
+    return organization;
+  }
+
+  async getOrganizationsByUser(userId: string) {
+    const organizationRepository = AppDataSource.getRepository(Organization);
+
+    return organizationRepository.find({ where: { users: { id: userId } } });
+  }
+
+  async updateOrganization(organizationData: OrganizationData): Promise<Organization> {
+    const organizationRepository = AppDataSource.getRepository(Organization);
+
+    const organization = await organizationRepository.findOneBy({ id: organizationData.id });
+
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    Object.assign(organization, omit(organizationData, [properties<Organization>().id]));
+
+    await organizationRepository.save(organization);
+
+    return organization;
+  }
+
+  async deleteOrganization(organizationId: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const organizationRepository = transactionalEntityManager.getRepository(Organization);
+
+      const organization = await organizationRepository.findOneBy({ id: organizationId });
+
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+
+      if (organization.isPersonal) {
+        throw new Error('Cannot delete personal organization');
+      }
+
+      const userRepository = transactionalEntityManager.getRepository(User);
+      const users = await userRepository.find({ where: { organizations: { id: organization.id } }, relations: { organizations: true } });
+
+      users.forEach((user) => {
+        user.organizations = user.organizations.filter((userOrganization) => userOrganization.id !== organization.id);
+      });
+
+      await userRepository.save(users);
+      await organizationRepository.delete({ id: organization.id });
+    });
+  }
+
+  // Knowledge base operations.
+
+  async createKnowledgeBase(knowledgeBaseData: KnowledgeBaseData, organizationId: string): Promise<KnowledgeBase> {
+    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
+    const knowledgeBase = new KnowledgeBase({
+      id: uuidv4(),
+      ...knowledgeBaseData
+    });
+
+    knowledgeBase.organization = { id: organizationId } as Organization;
+
+    await knowledgeBaseRepository.save(knowledgeBase);
+
+    return omit(knowledgeBase, [properties<KnowledgeBase>().organization]) as KnowledgeBase;
+  }
+
+  async getKnowledgeBasesByUserWithOrganization(userId: string) {
+    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
+    const organizationRepository = AppDataSource.getRepository(Organization);
+
+    const userOrganizations = await organizationRepository.find({ where: { users: { id: userId } } });
+
+    return knowledgeBaseRepository.find({
+      where: {
+        organization: {
+          id: In(userOrganizations.map(organization => organization.id))
+        }
+      },
+      relations: { organization: true }
+    });
+  }
+
+  async getKnowledgeBasesByOrganization(organizationId: string) {
+    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
+
+    return knowledgeBaseRepository.find({ where: { organization: { id: organizationId } } });
+  }
+
+  async getKnowledgeBaseWithOrganization(knowledgeBaseId: string) {
+    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
+    const knowledgeBase = await knowledgeBaseRepository.findOne({ where: { id: knowledgeBaseId }, relations: { organization: true } });
+
+    return knowledgeBase;
+  }
+
+  async updateKnowledgeBase(knowledgeBaseData: Partial<KnowledgeBaseData>): Promise<KnowledgeBase> {
+    const knowledgeBaseRepository = AppDataSource.getRepository(KnowledgeBase);
+
+    const knowledgeBase = await knowledgeBaseRepository.findOneBy({ id: knowledgeBaseData.id });
+
+    if (!knowledgeBase) {
+      throw new Error('Knowledge base not found');
+    }
+
+    Object.assign(knowledgeBase, omit(knowledgeBaseData, [properties<KnowledgeBase>().id]));
+
+    await knowledgeBaseRepository.save(knowledgeBase);
+
+    return knowledgeBase;
+  }
+
+  async deleteKnowledgeBase(knowledgeBaseId: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const resourceRepository = transactionalEntityManager.getRepository(Resource);
+      const knowledgeBaseRepository = transactionalEntityManager.getRepository(KnowledgeBase);
+
+      await resourceRepository.delete({ knowledgeBase: { id: knowledgeBaseId } as KnowledgeBase });
+      await knowledgeBaseRepository.delete({ id: knowledgeBaseId });
+    });
+
+    await this.knowledgeBaseService.removeKnowledgeBase(knowledgeBaseId);
+  }
+
+  // Resource operations.
+
+  async addFileResourceToKnowledgeBase(knowledgeBaseId: string, fileName: string, fileContent: Buffer): Promise<Resource> {
+    const resourceRepository = AppDataSource.getRepository(Resource);
+    const resource = new Resource({
+      id: uuidv4(),
+      type: 'FILE', metadata: { fileName }
+    });
+
+    resource.knowledgeBase = { id: knowledgeBaseId } as KnowledgeBase;
+
+    await this.knowledgeBaseService.assimilateResource(knowledgeBaseId, resource.id, fileContent, fileName);
+
+    await resourceRepository.save(resource);
+
+    return omit(resource, [properties<Resource>().knowledgeBase]) as Resource;
+  }
+
+  async deleteResourceFromKnowledgeBase(resourceId: string, knowledgeBaseId: string) {
+    const resourceRepository = AppDataSource.getRepository(Resource);
+
+    await this.knowledgeBaseService.removeResource(knowledgeBaseId, resourceId);
+
+    await resourceRepository.delete({ id: resourceId });
+  }
+
+  async getResourcesByKnowledgeBase(knowledgeBaseId: string) {
+    const resourceRepository = AppDataSource.getRepository(Resource);
+
+    return resourceRepository.find({ where: { knowledgeBase: { id: knowledgeBaseId } } });
+  }
+
+  // Answer / chat operations
+
+  async requestAnswer(question: string, knowledgeBaseId: string, reference: string) {
+    return await this.answersService.addAnswerRequest(knowledgeBaseId, question, [], reference);
+  }
+
+  async requestAnswerForChatSession(question: string, knowledgeBaseId: string, chatSessionId: string, reference: string) {
+    // get chat session messages first
+    const chatSession = await this.getChatSessionWithMessages(chatSessionId);
+
+    if (!chatSession) {
+      throw new Error('Chat session not found');
+    }
+
+    const chatMessageRepository = AppDataSource.getRepository(ChatMessage);
+    const userChatMessage = new ChatMessage({
+      id: uuidv4(),
+      content: question,
+      sender: 'USER',
+      payload: {
+        knowledgeBaseId
+      }
+    });
+
+    userChatMessage.chatSession = { id: chatSessionId } as ChatSession;
+
+    await chatMessageRepository.save(userChatMessage);
+
+    const sortedChatMessages = sortBy((chatSession?.chatMessages ?? []), properties<ChatMessage>().createdAt);
+    const messages = sortedChatMessages.map((chatMessage) => {
+      return {
+        sender: chatMessage.sender,
+        content: chatMessage.content
+      };
+    });
+
+    const answer = await this.answersService.addAnswerRequest(knowledgeBaseId, question, messages, reference);
+    const aiChatMessage = new ChatMessage({
+      id: uuidv4(),
+      content: answer.answer,
+      sender: 'AI_ENGINE',
+      payload: {
+        knowledgeBaseId
+      }
+    });
+
+    aiChatMessage.chatSession = { id: chatSessionId } as ChatSession;
+
+    await chatMessageRepository.save(aiChatMessage);
+
+    return answer;
+  }
+
+  async createChatSession(userId: string) {
+    const chatSessionRepository = AppDataSource.getRepository(ChatSession);
+    const chatSession = new ChatSession({
+      id: uuidv4(),
+      metadata: {}
+    });
+
+    chatSession.user = { id: userId } as User;
+
+    await chatSessionRepository.save(chatSession);
+
+    return omit(chatSession, [properties<ChatSession>().user]) as ChatSession;
+  }
+
+  async getUserChatSessions(userId: string) {
+    const chatSessionRepository = AppDataSource.getRepository(ChatSession);
+
+    return chatSessionRepository.find({ where: { user: { id: userId } } });
+  }
+
+  async getChatSessionWithMessages(chatSessionId: string) {
+    const chatSessionRepository = AppDataSource.getRepository(ChatSession);
+
+    return await chatSessionRepository.findOne({ where: { id: chatSessionId }, relations: { chatMessages: true } });
+  }
+
+  async deleteChatSession(chatSessionId: string) {
+    await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const chatMessageRepository = transactionalEntityManager.getRepository(ChatMessage);
+      const chatSessionRepository = transactionalEntityManager.getRepository(ChatSession);
+
+      await chatMessageRepository.delete({ chatSession: { id: chatSessionId } as ChatSession });
+      await chatSessionRepository.delete({ id: chatSessionId });
     });
   }
 }

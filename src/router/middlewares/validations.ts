@@ -36,3 +36,20 @@ export function validateKnowledgeBaseIsInUserOrganization(getKnowledgeBaseId: (c
     return next();
   };
 }
+
+export function validateChatSessionBelongsToUser(getChatSessionId: (ctx: KoaContext) => string) {
+  return async (ctx: KoaContext, next: Next) => {
+    const chatSessionId = getChatSessionId(ctx);
+    const userChatSessions = await applicationOperations.getUserChatSessions(ctx.state.user.id);
+
+    if (userChatSessions.every((chatSession) => chatSession.id !== chatSessionId)) {
+      logger.debug('Chat session does not belong to user');
+
+      ctx.status = 403;
+
+      return;
+    }
+
+    return next();
+  };
+}

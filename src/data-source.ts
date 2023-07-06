@@ -3,6 +3,8 @@
  * Module dependencies.
  */
 
+import { ChatMessage } from './models/chat-message';
+import { ChatSession } from './models/chat-session';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { EmailVerificationToken } from './models/email-verification-token';
 import { KnowledgeBase } from './models/knowledge-base';
@@ -24,7 +26,16 @@ export const dataSourceOptions: DataSourceOptions = {
   username: config.datasource.username,
   password: config.datasource.password,
   database: config.datasource.database,
-  entities: [EmailVerificationToken, PasswordResetToken, Resource, Organization, User, KnowledgeBase],
+  entities: [
+    EmailVerificationToken,
+    PasswordResetToken,
+    Resource,
+    Organization,
+    User,
+    KnowledgeBase,
+    ChatSession,
+    ChatMessage
+  ],
   synchronize: true,
   migrations: [],
   migrationsTableName: 'migrations',
