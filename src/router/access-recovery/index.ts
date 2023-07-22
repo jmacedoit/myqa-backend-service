@@ -80,7 +80,7 @@ async function resetPasswordController(ctx: KoaContext, next: Next) {
 }
 
 /*
- * Add email verification routes.
+ * Add access recovery routes.
  */
 
 export function addAccessRecoveryRoutes(router: Router<any, any>) {

@@ -11,6 +11,7 @@ import { applicationOperations } from 'src/services/application-operations';
 import { jwtAuthenticationMiddleware } from 'src/router/middlewares/authentication';
 import { omit } from 'lodash';
 import { properties } from 'src/utilities/types';
+import { validateCaptchaToken } from 'src/router/middlewares/validations';
 import { validate as validateEmail } from 'deep-email-validator';
 import { validateRequestSchema } from 'src/router/middlewares/schema';
 import Router from 'koa-router';
@@ -35,9 +36,12 @@ const createUserSchema = {
     },
     'displayName': {
       'type': 'string'
+    },
+    'captchaToken': {
+      'type': 'string'
     }
   },
-  'required': ['email', 'password', 'acceptedTerms', 'displayName']
+  'required': ['email', 'password', 'acceptedTerms', 'displayName', 'captchaToken']
 } as const;
 
 type CreateUserData = FromSchema<typeof createUserSchema>;
@@ -91,6 +95,7 @@ export function addUserRoutes(router: Router<any, any>) {
   router.post(
     '/users',
     validateRequestSchema({ body: createUserSchema }),
+    validateCaptchaToken((ctx: KoaContext) => (ctx.request.body as CreateUserData).captchaToken),
     createUserController
   );
 }

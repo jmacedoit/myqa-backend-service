@@ -138,6 +138,9 @@ async function getKnowledgeBaseResourcesController(context: KoaContext, next: Ne
 async function postKnowledgeBaseResourceController(context: KoaContext, next: Next) {
   const knowledgeBaseId = context.params.knowledgeBaseId;
   const file = (context.request.files as { [fieldname: string]: multer.File[] }).resource[0];
+
+  console.log(file);
+
   const addFileResourceResult = await applicationOperations.addFileResourceToKnowledgeBase(knowledgeBaseId, file.originalname, file.buffer);
 
   context.body = addFileResourceResult;
@@ -213,7 +216,15 @@ async function getKnowledgeBasesController(ctx: KoaContext, next: Next) {
  */
 
 export function addKnowledgeBaseRoutes(router: Router<any, any>) {
-  const upload = multer();
+  const upload = multer({
+    fileFilter: (_req, file, cb) => {
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString(
+        'utf8',
+      );
+
+      cb(null, true);
+    }
+  });
 
   router.get(
     '/knowledge-bases/:knowledgeBaseId/resources',

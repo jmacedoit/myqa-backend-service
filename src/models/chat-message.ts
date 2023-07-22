@@ -8,6 +8,14 @@ import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, Up
 
 export type SenderType = 'AI_ENGINE' | 'USER';
 
+export type ChatMessagePayload = {
+  language?: string,
+  wisdomLevel?: string,
+  knowledgeBaseId: string,
+  sources?: { chunkId: string }[],
+  questionMessageId?: string
+};
+
 @Entity()
 export class ChatMessage {
   @PrimaryGeneratedColumn('uuid')
@@ -23,7 +31,7 @@ export class ChatMessage {
   content!: string
 
   @Column({ type: 'json' })
-  payload!: object
+  payload!: ChatMessagePayload
 
   @CreateDateColumn()
   createdAt!: Date
@@ -31,7 +39,7 @@ export class ChatMessage {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  constructor(chatMessage?: { id?: string, sender: SenderType, content: string, payload: object }) {
+  constructor(chatMessage?: { id?: string, sender: SenderType, content: string, payload: ChatMessagePayload }) {
     if (!chatMessage) {
       return;
     }

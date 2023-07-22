@@ -53,5 +53,9 @@ module.exports = {
     apiKey: null,
     senderName: 'Myqa',
     senderEmail: 'hello@myqa.app'
+  },
+  recaptcha: {
+    projectNumber: null,
+    key: null
   }
 }
