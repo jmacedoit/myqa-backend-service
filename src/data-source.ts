@@ -9,9 +9,12 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { EmailVerificationToken } from './models/email-verification-token';
 import { KnowledgeBase } from './models/knowledge-base';
 import { Organization } from './models/organization';
+import { OrganizationPlan } from './models/organization-plan';
 import { PasswordResetToken } from './models/password-reset-token';
+import { Plan } from './models/plan';
 import { Resource } from 'src/models/resource';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { SpendingRecord } from './models/spending-record';
 import { User } from './models/user';
 import config from './config';
 
@@ -34,7 +37,10 @@ export const dataSourceOptions: DataSourceOptions = {
     User,
     KnowledgeBase,
     ChatSession,
-    ChatMessage
+    ChatMessage,
+    Plan,
+    OrganizationPlan,
+    SpendingRecord
   ],
   synchronize: true,
   migrations: [],

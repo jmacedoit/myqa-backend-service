@@ -59,5 +59,9 @@ export default {
     apiKey: config.get('sendgrid.apiKey') as string,
     senderEmail: config.get('sendgrid.senderEmail') as string,
     senderName: config.get('sendgrid.senderName') as string
+  },
+  recaptcha: {
+    key: config.get('recaptcha.key') as string,
+    projectNumber: config.get('recaptcha.projectNumber') as string
   }
 };

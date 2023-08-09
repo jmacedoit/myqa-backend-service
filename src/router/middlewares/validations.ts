@@ -6,6 +6,7 @@
 import { KoaContext } from 'src/types/koa';
 import { Next } from 'koa';
 import { applicationOperations } from 'src/services/application-operations';
+import { recaptchaService } from 'src/services/recaptcha-service';
 import logger from 'src/logger';
 
 /*
@@ -48,6 +49,35 @@ export function validateChatSessionBelongsToUser(getChatSessionId: (ctx: KoaCont
       ctx.status = 403;
 
       return;
+    }
+
+    return next();
+  };
+}
+
+export function validateMessageBelongsToUser(getMessageId: (ctx: KoaContext) => string) {
+  return async (ctx: KoaContext, next: Next) => {
+    const messageId = getMessageId(ctx);
+    const message = await applicationOperations.getMessageWithChatSession(messageId);
+
+    if (message === null) {
+      logger.debug('Message not found');
+
+      ctx.status = 404;
+
+      return;
+    }
+
+    return await validateChatSessionBelongsToUser(() => message.chatSession.id as unknown as string)(ctx, next);
+  };
+}
+
+export function validateCaptchaToken(getCaptchaToken: (ctx: KoaContext) => string) {
+  return async (ctx: KoaContext, next: Next) => {
+    const captchaToken = getCaptchaToken(ctx);
+
+    if (!await recaptchaService.verify(captchaToken)) {
+      ctx.throw(403, 'Bot detected');
     }
 
     return next();

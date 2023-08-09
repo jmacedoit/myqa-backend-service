@@ -32,6 +32,16 @@ export class KnowledgeBaseIntelligenceService {
     if (!response.ok) {
       throw new Error(`Error assimilating resource: ${response.statusText}`);
     }
+
+    const responseData =  await response.json() as {
+      'total_chunks': number
+      'total_characters': number
+    };
+
+    return {
+      totalChunks: responseData.total_chunks,
+      totalCharacters: responseData.total_characters,
+    };
   }
 
   async removeResource(knowledgeBaseId: string, resourceId: string) {

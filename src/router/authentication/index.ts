@@ -8,6 +8,7 @@ import { KoaPassport } from 'koa-passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Next } from 'koa';
 import { applicationOperations } from 'src/services/application-operations';
+import { validateCaptchaToken } from 'src/router/middlewares/validations';
 import Router from 'koa-router';
 import config from 'src/config';
 import jwt from 'jsonwebtoken';
@@ -69,9 +70,32 @@ async function authenticationController(ctx: KoaContext, next: Next) {
 }
 
 /*
+ * Logout controller
+ */
+
+async function logoutController(ctx: KoaContext, next: Next) {
+  ctx.cookies.set('jwt', null, {
+    httpOnly: true,
+    secure: config.authentication.secureCookies,
+    expires: new Date(1), // set the cookie expiry date in the past
+  });
+
+  ctx.status = 200;
+  ctx.body = { message: 'Logout successful' };
+
+  await next();
+}
+
+/*
  * Add controller routes.
  */
 
 export function addAuthenticationRoutes(router: Router<any, any>) {
-  router.post('/authentication', authenticationController);
+  router.post(
+    '/authentication',
+    validateCaptchaToken((ctx: KoaContext) => ((ctx?.request?.body) as any).captchaToken),
+    authenticationController
+  );
+
+  router.delete('/authentication', logoutController);
 }

@@ -16,7 +16,7 @@ export class ChatSession {
   user!: User
 
   @OneToMany(() => ChatMessage, (chatMessage: ChatMessage) => chatMessage.chatSession)
-  chatMessages!: ChatMessage[]
+  chatMessages?: ChatMessage[]
 
   @Column({ type: 'json' })
   metadata!: object

@@ -4,6 +4,7 @@
  */
 
 import { addAccessRecoveryRoutes } from './access-recovery';
+import { addAccountRoutes } from './account';
 import { addAnswersRoutes } from './answers';
 import { addAuthenticationRoutes } from './authentication';
 import { addChatRoutes } from './chat';
@@ -22,6 +23,7 @@ const router = new Router({
   prefix: config.api.prefix
 });
 
+addAccountRoutes(router);
 addAuthenticationRoutes(router);
 addOrganizationRoutes(router);
 addKnowledgeBaseRoutes(router);
