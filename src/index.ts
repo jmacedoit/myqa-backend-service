@@ -22,8 +22,8 @@ import socketIoServer from './server/socketio';
 process.on('warning', error => logger.warn(error.stack));
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.log('Unhandled Rejection at:', promise, 'Reason:', reason);
-  console.log((reason as any).stack); // Logs the stack trace
+  logger.error('Unhandled Rejection at:', promise, 'Reason:', reason);
+  logger.error((reason as any).stack); // Logs the stack trace
 });
 
 /*

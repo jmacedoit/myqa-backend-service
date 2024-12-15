@@ -4,8 +4,10 @@
  */
 
 import { addAccessRecoveryRoutes } from './access-recovery';
+import { addAccountRoutes } from './account';
 import { addAnswersRoutes } from './answers';
 import { addAuthenticationRoutes } from './authentication';
+import { addChatRoutes } from './chat';
 import { addEmailVerificationRoutes } from './email-verification';
 import { addKnowledgeBaseRoutes } from './knowledge-bases';
 import { addOrganizationRoutes } from './organizations';
@@ -21,10 +23,12 @@ const router = new Router({
   prefix: config.api.prefix
 });
 
+addAccountRoutes(router);
 addAuthenticationRoutes(router);
 addOrganizationRoutes(router);
 addKnowledgeBaseRoutes(router);
 addUserRoutes(router);
+addChatRoutes(router);
 addAnswersRoutes(router);
 addEmailVerificationRoutes(router);
 addAccessRecoveryRoutes(router);

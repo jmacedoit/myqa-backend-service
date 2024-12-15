@@ -3,7 +3,8 @@
  * Module dependencies.
  */
 
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { ChatSession } from './chat-session';
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Organization } from './organization';
 
 @Entity()
@@ -23,6 +24,9 @@ export class User {
   @ManyToMany(() => Organization, (organization: Organization) => organization.users)
   @JoinTable()
   organizations!: Organization[]
+
+  @OneToMany(() => ChatSession, (chatSession: ChatSession) => chatSession.user)
+  chatSessions!: ChatSession[]
 
   @Column('boolean')
   acceptedTerms!: boolean

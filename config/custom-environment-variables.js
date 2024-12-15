@@ -53,5 +53,9 @@ module.exports = {
     apiKey: 'SENDGRID_API_KEY',
     senderEmail: 'SENDGRID_SENDER_EMAIL',
     senderName: 'SENDGRID_SENDER_NAME'
+  },
+  recaptcha: {
+    projectNumber: 'RECAPTCHA_PROJECT_NUMBER',
+    key: 'RECAPTCHA_KEY'
   }
 };
